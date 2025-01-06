@@ -19,7 +19,7 @@ async function fetchTodos() {
         const todoList = document.getElementById('todoList');
 
         todoList.innerHTML = response.data.map(todo => 
-            `<div class="todo-item flex items-center gap-4 p-4 bg-white shadow-md rounded-lg transition-all hover:shadow-xl">
+            `<div class="todo-item flex items-center gap-4 p-4 bg-white shadow-md rounded-lg transition-all hover:shadow-xl" onclick=showTodoDetail(${todo.id}) >
                 <input type="checkbox"
                     class="w-5 h-5 accent-blue-500"
                     ${todo.is_completed ? 'checked' : ''}
@@ -81,3 +81,42 @@ async function deleteTodo(todoId) {
 
 // 페이지 로드 시 Todo 목록 조회
 document.addEventListener('DOMContentLoaded', fetchTodos);
+
+async function showTodoDetail(id) {
+    try {
+        const response = await axios.get(`${API_BASE_URL}/api/todos/${id}/`);
+        const todo = response.data;
+        currentTodoId = id;
+        document.getElementById('modalTitle').textContent = todo.title;
+        document.getElementById('modalContent').textContent = todo.content || '내용 없음';
+        document.getElementById('todoModal').classList.remove('hidden');
+    } catch (error) {
+        console.error('Error:', error);
+        alert('상세 정보 조회 실패: ' + error.message);
+    }
+}
+
+// 모달 닫기
+function closeTodoModal() {
+    document.getElementById('todoModal').classList.add('hidden');
+}
+
+// Todo 수정
+async function editTodo() {
+    const newTitle = prompt('새 제목을 입력하세요:', document.getElementById('modalTitle').textContent);
+    const newContent = prompt('새 내용을 입력하세요:', document.getElementById('modalContent').textContent);
+    if (!newTitle) return;
+
+    try {
+        await axios.put(`${API_BASE_URL}/api/todos/${currentTodoId}/`, {
+            title: newTitle,
+            content: newContent
+        });
+
+        closeTodoModal();
+        fetchTodos();
+    } catch (error) {
+        console.error('Error:', error);
+        alert('수정 실패: ' + error.message);
+    }
+}
